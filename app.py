@@ -83,11 +83,13 @@ def main():
             st.success("✅ All parameters validated")
     
     # Main content area with tabs
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
         "📍 Subcatchments", 
         "🏞️ Surface Properties", 
         "💧 Infiltration", 
         "🌡️ Climate Data",
+        "🌿 LID Controls",
+        "📊 LID Usage",
         "📊 Results",
         "📋 Summary"
     ])
@@ -105,9 +107,15 @@ def main():
         climate_parameters()
     
     with tab5:
-        results_display()
+        lid_controls_parameters()
     
     with tab6:
+        lid_usage_parameters()
+    
+    with tab7:
+        results_display()
+    
+    with tab8:
         parameter_summary()
 
 def subcatchment_parameters():
@@ -815,6 +823,560 @@ def export_parameters_csv():
         
     except Exception as e:
         st.error(f"Export failed: {str(e)}")
+
+def lid_controls_parameters():
+    """LID Controls configuration interface."""
+    st.header("🌿 LID Controls Configuration")
+    st.markdown("Configure Low Impact Development (LID) controls for green infrastructure modeling.")
+    
+    # Import LID helper functions
+    from parameter_defaults import get_lid_type_defaults, get_lid_layer_definitions
+    
+    # Enable/disable LID controls
+    lid_enabled = st.checkbox(
+        "Enable LID Controls",
+        value=st.session_state.parameters.get('lid_controls', {}).get('enabled', False),
+        help="Enable LID controls for green infrastructure modeling"
+    )
+    st.session_state.parameters['lid_controls']['enabled'] = lid_enabled
+    
+    if not lid_enabled:
+        st.info("LID controls are disabled. Enable them to configure green infrastructure practices.")
+        return
+    
+    # Get available LID types
+    lid_types = get_lid_type_defaults()
+    layer_definitions = get_lid_layer_definitions()
+    
+    # Select LID type to configure
+    selected_lid = st.selectbox(
+        "Select LID Type to Configure",
+        options=list(lid_types.keys()),
+        format_func=lambda x: lid_types[x],
+        help="Choose the LID type to configure parameters for"
+    )
+    
+    st.subheader(f"Configure {lid_types[selected_lid]}")
+    
+    # Display layer information
+    st.info(f"**Layers for {lid_types[selected_lid]}:**")
+    for layer, description in layer_definitions[selected_lid].items():
+        st.write(f"• **{layer.title()}**: {description}")
+    
+    # Configure parameters for selected LID type
+    lid_params = st.session_state.parameters['lid_controls'][selected_lid]
+    
+    # Surface layer (common to all LID types)
+    if 'surface' in lid_params:
+        with st.expander("Surface Layer Parameters", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                berm_height = st.number_input(
+                    "Berm Height (inches)",
+                    min_value=0.0,
+                    max_value=12.0,
+                    value=lid_params['surface']['berm_height'],
+                    step=0.5,
+                    help="Maximum ponding depth before overflow"
+                )
+                lid_params['surface']['berm_height'] = berm_height
+                
+                vegetation_volume = st.number_input(
+                    "Vegetation Volume Fraction",
+                    min_value=0.0,
+                    max_value=0.3,
+                    value=lid_params['surface']['vegetation_volume'],
+                    step=0.01,
+                    help="Volume occupied by stems and leaves"
+                )
+                lid_params['surface']['vegetation_volume'] = vegetation_volume
+            
+            with col2:
+                surface_roughness = st.number_input(
+                    "Surface Roughness (Manning's n)",
+                    min_value=0.01,
+                    max_value=0.4,
+                    value=lid_params['surface']['surface_roughness'],
+                    step=0.01,
+                    help="Manning's roughness coefficient"
+                )
+                lid_params['surface']['surface_roughness'] = surface_roughness
+                
+                surface_slope = st.number_input(
+                    "Surface Slope (%)",
+                    min_value=0.0,
+                    max_value=10.0,
+                    value=lid_params['surface']['surface_slope'],
+                    step=0.1,
+                    help="Surface slope for drainage"
+                )
+                lid_params['surface']['surface_slope'] = surface_slope
+                
+                # Side slope for vegetative swales
+                if selected_lid == 'vegetative_swale':
+                    side_slope = st.number_input(
+                        "Side Slope (%)",
+                        min_value=10.0,
+                        max_value=100.0,
+                        value=lid_params['surface']['side_slope'],
+                        step=1.0,
+                        help="Side slope of trapezoidal cross-section"
+                    )
+                    lid_params['surface']['side_slope'] = side_slope
+    
+    # Soil layer (for applicable LID types)
+    if 'soil' in lid_params:
+        with st.expander("Soil Layer Parameters", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                thickness = st.number_input(
+                    "Soil Thickness (inches)",
+                    min_value=2.0,
+                    max_value=48.0,
+                    value=lid_params['soil']['thickness'],
+                    step=1.0,
+                    help="Depth of soil layer"
+                )
+                lid_params['soil']['thickness'] = thickness
+                
+                porosity = st.number_input(
+                    "Porosity",
+                    min_value=0.3,
+                    max_value=0.7,
+                    value=lid_params['soil']['porosity'],
+                    step=0.01,
+                    help="Total void volume fraction"
+                )
+                lid_params['soil']['porosity'] = porosity
+                
+                field_capacity = st.number_input(
+                    "Field Capacity",
+                    min_value=0.05,
+                    max_value=0.4,
+                    value=lid_params['soil']['field_capacity'],
+                    step=0.01,
+                    help="Moisture content after drainage"
+                )
+                lid_params['soil']['field_capacity'] = field_capacity
+            
+            with col2:
+                wilting_point = st.number_input(
+                    "Wilting Point",
+                    min_value=0.01,
+                    max_value=0.2,
+                    value=lid_params['soil']['wilting_point'],
+                    step=0.01,
+                    help="Minimum moisture for plant survival"
+                )
+                lid_params['soil']['wilting_point'] = wilting_point
+                
+                conductivity = st.number_input(
+                    "Conductivity (in/hr)",
+                    min_value=0.1,
+                    max_value=10.0,
+                    value=lid_params['soil']['conductivity'],
+                    step=0.1,
+                    help="Saturated hydraulic conductivity"
+                )
+                lid_params['soil']['conductivity'] = conductivity
+                
+                conductivity_slope = st.number_input(
+                    "Conductivity Slope",
+                    min_value=1.0,
+                    max_value=30.0,
+                    value=lid_params['soil']['conductivity_slope'],
+                    step=1.0,
+                    help="Slope of log(conductivity) vs moisture curve"
+                )
+                lid_params['soil']['conductivity_slope'] = conductivity_slope
+                
+                suction_head = st.number_input(
+                    "Suction Head (inches)",
+                    min_value=1.0,
+                    max_value=20.0,
+                    value=lid_params['soil']['suction_head'],
+                    step=0.5,
+                    help="Green-Ampt suction head parameter"
+                )
+                lid_params['soil']['suction_head'] = suction_head
+    
+    # Pavement layer (for permeable pavement)
+    if 'pavement' in lid_params:
+        with st.expander("Pavement Layer Parameters", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                thickness = st.number_input(
+                    "Pavement Thickness (inches)",
+                    min_value=2.0,
+                    max_value=8.0,
+                    value=lid_params['pavement']['thickness'],
+                    step=0.5,
+                    help="Thickness of porous pavement"
+                )
+                lid_params['pavement']['thickness'] = thickness
+                
+                void_ratio = st.number_input(
+                    "Void Ratio",
+                    min_value=0.1,
+                    max_value=0.3,
+                    value=lid_params['pavement']['void_ratio'],
+                    step=0.01,
+                    help="Volume of voids relative to solids"
+                )
+                lid_params['pavement']['void_ratio'] = void_ratio
+            
+            with col2:
+                impervious_fraction = st.number_input(
+                    "Impervious Surface Fraction",
+                    min_value=0.0,
+                    max_value=0.5,
+                    value=lid_params['pavement']['impervious_fraction'],
+                    step=0.01,
+                    help="Ratio of impervious material"
+                )
+                lid_params['pavement']['impervious_fraction'] = impervious_fraction
+                
+                permeability = st.number_input(
+                    "Permeability (in/hr)",
+                    min_value=10.0,
+                    max_value=1000.0,
+                    value=lid_params['pavement']['permeability'],
+                    step=10.0,
+                    help="Hydraulic conductivity of pavement"
+                )
+                lid_params['pavement']['permeability'] = permeability
+                
+                clogging_factor = st.number_input(
+                    "Clogging Factor",
+                    min_value=0.0,
+                    max_value=1000.0,
+                    value=lid_params['pavement']['clogging_factor'],
+                    step=10.0,
+                    help="Pavement volumes treated before full clogging"
+                )
+                lid_params['pavement']['clogging_factor'] = clogging_factor
+    
+    # Storage layer (for applicable LID types)
+    if 'storage' in lid_params:
+        with st.expander("Storage Layer Parameters", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                thickness = st.number_input(
+                    "Storage Thickness (inches)",
+                    min_value=6.0,
+                    max_value=48.0,
+                    value=lid_params['storage']['thickness'],
+                    step=1.0,
+                    help="Depth of storage/gravel layer"
+                )
+                lid_params['storage']['thickness'] = thickness
+                
+                void_ratio = st.number_input(
+                    "Storage Void Ratio",
+                    min_value=0.3,
+                    max_value=0.7,
+                    value=lid_params['storage']['void_ratio'],
+                    step=0.01,
+                    help="Volume of voids relative to solids"
+                )
+                lid_params['storage']['void_ratio'] = void_ratio
+            
+            with col2:
+                seepage_rate = st.number_input(
+                    "Seepage Rate (in/hr)",
+                    min_value=0.0,
+                    max_value=5.0,
+                    value=lid_params['storage']['seepage_rate'],
+                    step=0.1,
+                    help="Infiltration rate into native soil"
+                )
+                lid_params['storage']['seepage_rate'] = seepage_rate
+                
+                clogging_factor = st.number_input(
+                    "Storage Clogging Factor",
+                    min_value=0.0,
+                    max_value=1000.0,
+                    value=lid_params['storage']['clogging_factor'],
+                    step=10.0,
+                    help="Storage volumes treated before clogging"
+                )
+                lid_params['storage']['clogging_factor'] = clogging_factor
+    
+    # Drainage mat layer (for green roofs)
+    if 'drainage_mat' in lid_params:
+        with st.expander("Drainage Mat Parameters", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                thickness = st.number_input(
+                    "Drainage Mat Thickness (inches)",
+                    min_value=0.5,
+                    max_value=3.0,
+                    value=lid_params['drainage_mat']['thickness'],
+                    step=0.1,
+                    help="Thickness of drainage mat"
+                )
+                lid_params['drainage_mat']['thickness'] = thickness
+                
+                void_fraction = st.number_input(
+                    "Void Fraction",
+                    min_value=0.3,
+                    max_value=0.7,
+                    value=lid_params['drainage_mat']['void_fraction'],
+                    step=0.01,
+                    help="Ratio of void volume to total volume"
+                )
+                lid_params['drainage_mat']['void_fraction'] = void_fraction
+            
+            with col2:
+                roughness = st.number_input(
+                    "Roughness (Manning's n)",
+                    min_value=0.05,
+                    max_value=0.4,
+                    value=lid_params['drainage_mat']['roughness'],
+                    step=0.01,
+                    help="Manning's n for horizontal flow"
+                )
+                lid_params['drainage_mat']['roughness'] = roughness
+                
+                initial_moisture = st.number_input(
+                    "Initial Moisture Content",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=lid_params['drainage_mat']['initial_moisture'],
+                    step=0.01,
+                    help="Initial moisture content"
+                )
+                lid_params['drainage_mat']['initial_moisture'] = initial_moisture
+    
+    # Drain layer (for applicable LID types)
+    if 'drain' in lid_params:
+        with st.expander("Underdrain Parameters", expanded=False):
+            enable_drain = st.checkbox(
+                "Enable Underdrain System",
+                value=lid_params['drain']['drain_coefficient'] > 0,
+                help="Enable underdrain system for this LID control"
+            )
+            
+            if enable_drain:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    drain_coefficient = st.number_input(
+                        "Drain Coefficient",
+                        min_value=0.1,
+                        max_value=10.0,
+                        value=max(0.1, lid_params['drain']['drain_coefficient']),
+                        step=0.1,
+                        help="Flow coefficient for power function"
+                    )
+                    lid_params['drain']['drain_coefficient'] = drain_coefficient
+                    
+                    drain_exponent = st.number_input(
+                        "Drain Exponent",
+                        min_value=0.1,
+                        max_value=2.0,
+                        value=lid_params['drain']['drain_exponent'],
+                        step=0.1,
+                        help="Exponent in power function (0.5 for orifice)"
+                    )
+                    lid_params['drain']['drain_exponent'] = drain_exponent
+                
+                with col2:
+                    offset_height = st.number_input(
+                        "Offset Height (inches)",
+                        min_value=0.0,
+                        max_value=12.0,
+                        value=lid_params['drain']['offset_height'],
+                        step=0.5,
+                        help="Distance above storage layer bottom"
+                    )
+                    lid_params['drain']['offset_height'] = offset_height
+                    
+                    delay = st.number_input(
+                        "Delay (hours)",
+                        min_value=0.0,
+                        max_value=24.0,
+                        value=lid_params['drain']['delay'],
+                        step=0.5,
+                        help="Time to drain system after rainfall ends"
+                    )
+                    lid_params['drain']['delay'] = delay
+            else:
+                lid_params['drain']['drain_coefficient'] = 0.0
+
+def lid_usage_parameters():
+    """LID Usage configuration interface."""
+    st.header("📊 LID Usage Configuration")
+    st.markdown("Configure how LID controls are applied to subcatchments.")
+    
+    # Check if LID controls are enabled
+    if not st.session_state.parameters.get('lid_controls', {}).get('enabled', False):
+        st.warning("LID controls must be enabled first. Please enable them in the LID Controls tab.")
+        return
+    
+    # Enable/disable LID usage
+    lid_usage_enabled = st.checkbox(
+        "Enable LID Usage",
+        value=st.session_state.parameters.get('lid_usage', {}).get('enabled', False),
+        help="Enable LID usage to apply LID controls to subcatchments"
+    )
+    st.session_state.parameters['lid_usage']['enabled'] = lid_usage_enabled
+    
+    if not lid_usage_enabled:
+        st.info("LID usage is disabled. Enable it to apply LID controls to subcatchments.")
+        return
+    
+    # Get available LID types
+    from parameter_defaults import get_lid_type_defaults
+    lid_types = get_lid_type_defaults()
+    
+    # Current assignments
+    assignments = st.session_state.parameters['lid_usage']['subcatchment_assignments']
+    
+    st.subheader("Subcatchment LID Assignments")
+    
+    # Add new assignment
+    with st.expander("Add New LID Assignment", expanded=True):
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            subcatch_id = st.text_input(
+                "Subcatchment ID",
+                value="S1",
+                help="ID of the subcatchment to apply LID to"
+            )
+            
+            lid_type = st.selectbox(
+                "LID Type",
+                options=list(lid_types.keys()),
+                format_func=lambda x: lid_types[x],
+                help="Type of LID control to apply"
+            )
+        
+        with col2:
+            number_replicate = st.number_input(
+                "Number of Replicates",
+                min_value=1,
+                max_value=100,
+                value=1,
+                help="Number of replicate LID units"
+            )
+            
+            area = st.number_input(
+                "Area (sq ft)",
+                min_value=100.0,
+                max_value=10000.0,
+                value=1000.0,
+                step=100.0,
+                help="Area of each LID unit"
+            )
+        
+        with col3:
+            width = st.number_input(
+                "Width (ft)",
+                min_value=10.0,
+                max_value=200.0,
+                value=50.0,
+                step=5.0,
+                help="Width of LID unit"
+            )
+            
+            initial_saturation = st.number_input(
+                "Initial Saturation (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=0.0,
+                step=5.0,
+                help="Initial saturation of LID unit"
+            )
+        
+        # Flow routing parameters
+        col4, col5 = st.columns(2)
+        
+        with col4:
+            from_imperv = st.number_input(
+                "From Impervious (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=100.0,
+                step=5.0,
+                help="Percent of impervious area runoff treated"
+            )
+            
+            to_perv = st.number_input(
+                "To Pervious (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=0.0,
+                step=5.0,
+                help="Percent of LID outflow sent to pervious area"
+            )
+        
+        with col5:
+            drain_to = st.text_input(
+                "Drain To",
+                value="",
+                help="Node or subcatchment to receive underdrain flow (optional)"
+            )
+            
+            drain_subcatch = st.text_input(
+                "Drain Subcatchment",
+                value="",
+                help="Subcatchment receiving underdrain flow (optional)"
+            )
+        
+        if st.button("Add LID Assignment"):
+            assignments[subcatch_id] = {
+                'lid_type': lid_type,
+                'number_replicate': number_replicate,
+                'area': area,
+                'width': width,
+                'initial_saturation': initial_saturation / 100.0,
+                'from_imperv': from_imperv,
+                'to_perv': to_perv,
+                'report_file': '',
+                'drain_to': drain_to if drain_to else '',
+                'drain_subcatch': drain_subcatch if drain_subcatch else ''
+            }
+            st.success(f"Added LID assignment for subcatchment {subcatch_id}")
+            st.rerun()
+    
+    # Display current assignments
+    if assignments:
+        st.subheader("Current LID Assignments")
+        
+        for subcatch_id, assignment in assignments.items():
+            with st.expander(f"Subcatchment {subcatch_id} - {lid_types[assignment['lid_type']]}"):
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.write(f"**LID Type:** {lid_types[assignment['lid_type']]}")
+                    st.write(f"**Number of Units:** {assignment['number_replicate']}")
+                    st.write(f"**Area:** {assignment['area']:.0f} sq ft")
+                
+                with col2:
+                    st.write(f"**Width:** {assignment['width']:.0f} ft")
+                    st.write(f"**Initial Saturation:** {assignment['initial_saturation']*100:.1f}%")
+                    st.write(f"**From Impervious:** {assignment['from_imperv']:.1f}%")
+                
+                with col3:
+                    st.write(f"**To Pervious:** {assignment['to_perv']:.1f}%")
+                    if assignment['drain_to']:
+                        st.write(f"**Drain To:** {assignment['drain_to']}")
+                    if assignment['drain_subcatch']:
+                        st.write(f"**Drain Subcatchment:** {assignment['drain_subcatch']}")
+                
+                if st.button(f"Remove Assignment", key=f"remove_{subcatch_id}"):
+                    del assignments[subcatch_id]
+                    st.success(f"Removed LID assignment for subcatchment {subcatch_id}")
+                    st.rerun()
+    else:
+        st.info("No LID assignments configured. Add assignments above to apply LID controls to subcatchments.")
 
 def apply_surface_defaults(surface_type):
     """Apply default values for different surface types."""

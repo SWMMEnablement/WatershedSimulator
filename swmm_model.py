@@ -66,6 +66,14 @@ class SWMMModel:
         # Add coordinates section
         content.append(self._generate_coordinates())
         
+        # Add LID controls section (if enabled)
+        if parameters.get('lid_controls', {}).get('enabled', False):
+            content.append(self._generate_lid_controls(parameters))
+        
+        # Add LID usage section (if enabled)
+        if parameters.get('lid_usage', {}).get('enabled', False):
+            content.append(self._generate_lid_usage(parameters))
+        
         # Add time series section
         content.append(self._generate_timeseries())
         
@@ -397,3 +405,149 @@ Units      None
             runoff = routed_runoff
         
         return runoff
+    
+    def _generate_lid_controls(self, parameters: Dict[str, Any]) -> str:
+        """Generate LID controls section."""
+        content = []
+        content.append("[LID_CONTROLS]")
+        content.append(";;Name             Type/Layer       Parameters")
+        content.append(";;---------------------------------------------------------")
+        
+        lid_controls = parameters.get('lid_controls', {})
+        
+        # Generate each LID control based on enabled types
+        for lid_type, lid_params in lid_controls.items():
+            if lid_type == 'enabled':
+                continue
+                
+            # Skip if parameters are not defined
+            if not isinstance(lid_params, dict):
+                continue
+                
+            control_name = lid_type.upper()
+            
+            # Bio-retention Cell
+            if lid_type == 'bioretention_cell':
+                content.append(f"{control_name}     BC")
+                # Surface layer
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 6.0)} {surface.get('vegetation_volume', 0.0)} {surface.get('surface_roughness', 0.1)} {surface.get('surface_slope', 1.0)} 0")
+                # Soil layer
+                soil = lid_params.get('soil', {})
+                content.append(f"{control_name}     SOIL          {soil.get('thickness', 24.0)} {soil.get('porosity', 0.45)} {soil.get('field_capacity', 0.15)} {soil.get('wilting_point', 0.05)} {soil.get('conductivity', 1.0)} {soil.get('conductivity_slope', 10.0)} {soil.get('suction_head', 6.0)}")
+                # Storage layer
+                storage = lid_params.get('storage', {})
+                content.append(f"{control_name}     STORAGE       {storage.get('thickness', 12.0)} {storage.get('void_ratio', 0.5)} {storage.get('seepage_rate', 0.5)} {storage.get('clogging_factor', 0.0)}")
+                # Drain layer (if enabled)
+                drain = lid_params.get('drain', {})
+                if drain.get('drain_coefficient', 0.0) > 0:
+                    content.append(f"{control_name}     DRAIN         {drain.get('drain_coefficient', 0.0)} {drain.get('drain_exponent', 0.5)} {drain.get('offset_height', 0.0)} {drain.get('delay', 0.0)}")
+            
+            # Green Roof
+            elif lid_type == 'green_roof':
+                content.append(f"{control_name}     GR")
+                # Surface layer
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 0.0)} {surface.get('vegetation_volume', 0.0)} {surface.get('surface_roughness', 0.1)} {surface.get('surface_slope', 2.0)} 0")
+                # Soil layer
+                soil = lid_params.get('soil', {})
+                content.append(f"{control_name}     SOIL          {soil.get('thickness', 4.0)} {soil.get('porosity', 0.45)} {soil.get('field_capacity', 0.15)} {soil.get('wilting_point', 0.05)} {soil.get('conductivity', 2.0)} {soil.get('conductivity_slope', 10.0)} {soil.get('suction_head', 6.0)}")
+                # Drainage mat
+                drainage = lid_params.get('drainage_mat', {})
+                content.append(f"{control_name}     DRAINMAT      {drainage.get('thickness', 1.0)} {drainage.get('void_fraction', 0.5)} {drainage.get('roughness', 0.1)} {drainage.get('initial_moisture', 0.0)}")
+            
+            # Infiltration Trench
+            elif lid_type == 'infiltration_trench':
+                content.append(f"{control_name}     IT")
+                # Surface layer
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 6.0)} {surface.get('vegetation_volume', 0.0)} {surface.get('surface_roughness', 0.1)} {surface.get('surface_slope', 1.0)} 0")
+                # Storage layer
+                storage = lid_params.get('storage', {})
+                content.append(f"{control_name}     STORAGE       {storage.get('thickness', 36.0)} {storage.get('void_ratio', 0.5)} {storage.get('seepage_rate', 0.5)} {storage.get('clogging_factor', 0.0)}")
+                # Drain layer (if enabled)
+                drain = lid_params.get('drain', {})
+                if drain.get('drain_coefficient', 0.0) > 0:
+                    content.append(f"{control_name}     DRAIN         {drain.get('drain_coefficient', 0.0)} {drain.get('drain_exponent', 0.5)} {drain.get('offset_height', 0.0)} {drain.get('delay', 0.0)}")
+            
+            # Permeable Pavement
+            elif lid_type == 'permeable_pavement':
+                content.append(f"{control_name}     PP")
+                # Surface layer
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 0.0)} {surface.get('vegetation_volume', 0.0)} {surface.get('surface_roughness', 0.01)} {surface.get('surface_slope', 1.0)} 0")
+                # Pavement layer
+                pavement = lid_params.get('pavement', {})
+                content.append(f"{control_name}     PAVEMENT      {pavement.get('thickness', 4.0)} {pavement.get('void_ratio', 0.15)} {pavement.get('impervious_fraction', 0.0)} {pavement.get('permeability', 100.0)} {pavement.get('clogging_factor', 0.0)}")
+                # Storage layer
+                storage = lid_params.get('storage', {})
+                content.append(f"{control_name}     STORAGE       {storage.get('thickness', 12.0)} {storage.get('void_ratio', 0.5)} {storage.get('seepage_rate', 0.5)} {storage.get('clogging_factor', 0.0)}")
+                # Drain layer (if enabled)
+                drain = lid_params.get('drain', {})
+                if drain.get('drain_coefficient', 0.0) > 0:
+                    content.append(f"{control_name}     DRAIN         {drain.get('drain_coefficient', 0.0)} {drain.get('drain_exponent', 0.5)} {drain.get('offset_height', 0.0)} {drain.get('delay', 0.0)}")
+            
+            # Rain Barrel
+            elif lid_type == 'rain_barrel':
+                content.append(f"{control_name}     RB")
+                # Surface layer (barrel height as berm height)
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 48.0)} {surface.get('vegetation_volume', 0.0)} {surface.get('surface_roughness', 0.01)} {surface.get('surface_slope', 0.0)} 0")
+                # Drain layer (if enabled)
+                drain = lid_params.get('drain', {})
+                if drain.get('drain_coefficient', 0.0) > 0:
+                    content.append(f"{control_name}     DRAIN         {drain.get('drain_coefficient', 0.0)} {drain.get('drain_exponent', 0.5)} {drain.get('offset_height', 0.0)} {drain.get('delay', 0.0)}")
+            
+            # Vegetative Swale
+            elif lid_type == 'vegetative_swale':
+                content.append(f"{control_name}     VS")
+                # Surface layer
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 6.0)} {surface.get('vegetation_volume', 0.2)} {surface.get('surface_roughness', 0.15)} {surface.get('surface_slope', 2.0)} {surface.get('side_slope', 33.0)}")
+            
+            # Rain Garden
+            elif lid_type == 'rain_garden':
+                content.append(f"{control_name}     RG")
+                # Surface layer
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 6.0)} {surface.get('vegetation_volume', 0.0)} {surface.get('surface_roughness', 0.1)} {surface.get('surface_slope', 1.0)} 0")
+                # Soil layer
+                soil = lid_params.get('soil', {})
+                content.append(f"{control_name}     SOIL          {soil.get('thickness', 18.0)} {soil.get('porosity', 0.45)} {soil.get('field_capacity', 0.15)} {soil.get('wilting_point', 0.05)} {soil.get('conductivity', 1.0)} {soil.get('conductivity_slope', 10.0)} {soil.get('suction_head', 6.0)}")
+                # Storage layer
+                storage = lid_params.get('storage', {})
+                content.append(f"{control_name}     STORAGE       {storage.get('thickness', 12.0)} {storage.get('void_ratio', 0.5)} {storage.get('seepage_rate', 0.5)} {storage.get('clogging_factor', 0.0)}")
+            
+            # Rooftop Disconnection
+            elif lid_type == 'rooftop_disconnection':
+                content.append(f"{control_name}     RD")
+                # Surface layer
+                surface = lid_params.get('surface', {})
+                content.append(f"{control_name}     SURFACE       {surface.get('berm_height', 0.0)} {surface.get('vegetation_volume', 0.0)} {surface.get('surface_roughness', 0.1)} {surface.get('surface_slope', 1.0)} 0")
+                # Drain layer (if enabled)
+                drain = lid_params.get('drain', {})
+                if drain.get('drain_coefficient', 0.0) > 0:
+                    content.append(f"{control_name}     DRAIN         {drain.get('drain_coefficient', 0.0)} {drain.get('drain_exponent', 0.5)} {drain.get('offset_height', 0.0)} {drain.get('delay', 0.0)}")
+            
+            content.append("")  # Empty line after each control
+        
+        return '\n'.join(content)
+    
+    def _generate_lid_usage(self, parameters: Dict[str, Any]) -> str:
+        """Generate LID usage section."""
+        content = []
+        content.append("[LID_USAGE]")
+        content.append(";;Subcatchment      LID Process       Number      Area        Width       InitSatur   FromImperv   ToPerv       Report     DrainTo     DrainFrom")
+        content.append(";;-------------------------------------------------------------------------------------------------------------------------")
+        
+        lid_usage = parameters.get('lid_usage', {})
+        assignments = lid_usage.get('subcatchment_assignments', {})
+        
+        for subcatch_id, assignment in assignments.items():
+            lid_type = assignment.get('lid_type', 'bioretention_cell')
+            control_name = lid_type.upper()
+            
+            # Format: Subcatchment LID_Control Number Area Width InitSatur FromImperv ToPerv Report DrainTo DrainFrom
+            content.append(f"{subcatch_id}                  {control_name}            {assignment.get('number_replicate', 1)}        {assignment.get('area', 1000.0)}        {assignment.get('width', 50.0)}        {assignment.get('initial_saturation', 0.0)}        {assignment.get('from_imperv', 100.0)}        {assignment.get('to_perv', 0.0)}        {assignment.get('report_file', '*')}        {assignment.get('drain_to', '*')}        {assignment.get('drain_subcatch', '*')}")
+        
+        return '\n'.join(content)

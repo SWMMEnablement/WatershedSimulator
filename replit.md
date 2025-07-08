@@ -50,6 +50,14 @@ The application follows a modular architecture with separate concerns:
 - **Cross-parameter Validation**: Consistency checks across related parameters
 - **User Feedback**: Clear error messages and suggestions
 
+### 5. LID (Low Impact Development) System
+- **LID Controls**: Eight comprehensive LID types with layer-based parameter configuration
+- **LID Usage**: Subcatchment assignment system for applying LID practices
+- **Green Infrastructure**: Bio-retention cells, green roofs, permeable pavement, infiltration trenches
+- **Stormwater Management**: Rain barrels, vegetative swales, rain gardens, rooftop disconnection
+- **Layer Configuration**: Surface, soil, storage, pavement, drainage mat, and underdrain parameters
+- **Validation**: Comprehensive parameter validation with logical consistency checks
+
 ## Data Flow
 
 1. **Parameter Input**: Users configure watershed parameters through Streamlit interface
@@ -91,6 +99,7 @@ The application follows a modular architecture with separate concerns:
 - July 08, 2025: Initial setup - Created comprehensive SWMM5 watershed modeling application
 - July 08, 2025: Added runoff line graph visualization - Created dedicated hydrograph display with peak annotations
 - July 08, 2025: Implemented auto-simulation - Application now runs simulation automatically on startup for immediate results
+- July 08, 2025: Added comprehensive LID (Low Impact Development) controls and usage - Implemented all 8 SWMM5 LID types with full parameter configuration and validation
 
 ## User Preferences
 

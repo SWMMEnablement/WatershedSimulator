@@ -77,6 +77,187 @@ def get_default_parameters() -> Dict[str, Any]:
             'snow_enabled': False,
             'snow_temp_threshold': 32.0,  # °F
             'snow_melt_coeff': 0.5
+        },
+        
+        'lid_controls': {
+            'enabled': False,
+            'bioretention_cell': {
+                'surface': {
+                    'berm_height': 6.0,  # inches
+                    'vegetation_volume': 0.0,  # fraction
+                    'surface_roughness': 0.1,  # Manning's n
+                    'surface_slope': 1.0  # percent
+                },
+                'soil': {
+                    'thickness': 24.0,  # inches
+                    'porosity': 0.45,  # fraction
+                    'field_capacity': 0.15,  # fraction
+                    'wilting_point': 0.05,  # fraction
+                    'conductivity': 1.0,  # inches/hr
+                    'conductivity_slope': 10.0,  # unitless
+                    'suction_head': 6.0  # inches
+                },
+                'storage': {
+                    'thickness': 12.0,  # inches
+                    'void_ratio': 0.5,  # fraction
+                    'seepage_rate': 0.5,  # inches/hr
+                    'clogging_factor': 0.0  # volumes treated before clogging
+                },
+                'drain': {
+                    'drain_coefficient': 0.0,  # drainage coefficient
+                    'drain_exponent': 0.5,  # drainage exponent
+                    'offset_height': 0.0,  # inches
+                    'delay': 0.0  # hours
+                }
+            },
+            'green_roof': {
+                'surface': {
+                    'berm_height': 0.0,  # inches
+                    'vegetation_volume': 0.0,  # fraction
+                    'surface_roughness': 0.1,  # Manning's n
+                    'surface_slope': 2.0  # percent
+                },
+                'soil': {
+                    'thickness': 4.0,  # inches
+                    'porosity': 0.45,  # fraction
+                    'field_capacity': 0.15,  # fraction
+                    'wilting_point': 0.05,  # fraction
+                    'conductivity': 2.0,  # inches/hr
+                    'conductivity_slope': 10.0,  # unitless
+                    'suction_head': 6.0  # inches
+                },
+                'drainage_mat': {
+                    'thickness': 1.0,  # inches
+                    'void_fraction': 0.5,  # fraction
+                    'roughness': 0.1,  # Manning's n
+                    'initial_moisture': 0.0  # initial moisture content
+                }
+            },
+            'infiltration_trench': {
+                'surface': {
+                    'berm_height': 6.0,  # inches
+                    'vegetation_volume': 0.0,  # fraction
+                    'surface_roughness': 0.1,  # Manning's n
+                    'surface_slope': 1.0  # percent
+                },
+                'storage': {
+                    'thickness': 36.0,  # inches
+                    'void_ratio': 0.5,  # fraction
+                    'seepage_rate': 0.5,  # inches/hr
+                    'clogging_factor': 0.0  # volumes treated before clogging
+                },
+                'drain': {
+                    'drain_coefficient': 0.0,  # drainage coefficient
+                    'drain_exponent': 0.5,  # drainage exponent
+                    'offset_height': 0.0,  # inches
+                    'delay': 0.0  # hours
+                }
+            },
+            'permeable_pavement': {
+                'surface': {
+                    'berm_height': 0.0,  # inches
+                    'vegetation_volume': 0.0,  # fraction
+                    'surface_roughness': 0.01,  # Manning's n
+                    'surface_slope': 1.0  # percent
+                },
+                'pavement': {
+                    'thickness': 4.0,  # inches
+                    'void_ratio': 0.15,  # fraction
+                    'impervious_fraction': 0.0,  # fraction
+                    'permeability': 100.0,  # inches/hr
+                    'clogging_factor': 0.0  # volumes treated before clogging
+                },
+                'storage': {
+                    'thickness': 12.0,  # inches
+                    'void_ratio': 0.5,  # fraction
+                    'seepage_rate': 0.5,  # inches/hr
+                    'clogging_factor': 0.0  # volumes treated before clogging
+                },
+                'drain': {
+                    'drain_coefficient': 0.0,  # drainage coefficient
+                    'drain_exponent': 0.5,  # drainage exponent
+                    'offset_height': 0.0,  # inches
+                    'delay': 0.0  # hours
+                }
+            },
+            'rain_barrel': {
+                'surface': {
+                    'berm_height': 48.0,  # inches (barrel height)
+                    'vegetation_volume': 0.0,  # fraction
+                    'surface_roughness': 0.01,  # Manning's n
+                    'surface_slope': 0.0  # percent
+                },
+                'drain': {
+                    'drain_coefficient': 0.0,  # drainage coefficient
+                    'drain_exponent': 0.5,  # drainage exponent
+                    'offset_height': 0.0,  # inches
+                    'delay': 0.0  # hours
+                }
+            },
+            'vegetative_swale': {
+                'surface': {
+                    'berm_height': 6.0,  # inches
+                    'vegetation_volume': 0.2,  # fraction
+                    'surface_roughness': 0.15,  # Manning's n
+                    'surface_slope': 2.0,  # percent
+                    'side_slope': 33.0  # percent (3:1 slope)
+                }
+            },
+            'rain_garden': {
+                'surface': {
+                    'berm_height': 6.0,  # inches
+                    'vegetation_volume': 0.0,  # fraction
+                    'surface_roughness': 0.1,  # Manning's n
+                    'surface_slope': 1.0  # percent
+                },
+                'soil': {
+                    'thickness': 18.0,  # inches
+                    'porosity': 0.45,  # fraction
+                    'field_capacity': 0.15,  # fraction
+                    'wilting_point': 0.05,  # fraction
+                    'conductivity': 1.0,  # inches/hr
+                    'conductivity_slope': 10.0,  # unitless
+                    'suction_head': 6.0  # inches
+                },
+                'storage': {
+                    'thickness': 12.0,  # inches
+                    'void_ratio': 0.5,  # fraction
+                    'seepage_rate': 0.5,  # inches/hr
+                    'clogging_factor': 0.0  # volumes treated before clogging
+                }
+            },
+            'rooftop_disconnection': {
+                'surface': {
+                    'berm_height': 0.0,  # inches
+                    'vegetation_volume': 0.0,  # fraction
+                    'surface_roughness': 0.1,  # Manning's n
+                    'surface_slope': 1.0  # percent
+                },
+                'drain': {
+                    'drain_coefficient': 0.0,  # drainage coefficient
+                    'drain_exponent': 0.5,  # drainage exponent
+                    'offset_height': 0.0,  # inches
+                    'delay': 0.0  # hours
+                }
+            }
+        },
+        
+        'lid_usage': {
+            'enabled': False,
+            'subcatchment_assignments': {
+                'S1': {
+                    'lid_type': 'bioretention_cell',
+                    'number_replicate': 1,
+                    'area': 1000.0,  # sq ft
+                    'width': 50.0,  # ft
+                    'initial_saturation': 0.0,  # fraction
+                    'from_imperv': 100.0,  # percent
+                    'to_perv': 0.0,  # percent
+                    'report_file': '',
+                    'drain_to': '',
+                    'drain_subcatch': ''
+                }
+            }
         }
     }
 
@@ -352,5 +533,71 @@ def get_climate_defaults_by_region() -> Dict[str, Dict[str, Any]]:
                            0.35, 0.33, 0.3, 0.28, 0.25, 0.22],
             'recovery_factor': 0.9,
             'snow_enabled': False
+        }
+    }
+
+def get_lid_type_defaults() -> Dict[str, str]:
+    """
+    Get available LID control types and their descriptions.
+    
+    Returns:
+        Dictionary mapping LID type names to descriptions.
+    """
+    return {
+        'bioretention_cell': 'Bio-retention Cell - Vegetated depression with engineered soil',
+        'green_roof': 'Green Roof - Vegetated roof system with drainage layer',
+        'infiltration_trench': 'Infiltration Trench - Gravel-filled trench for runoff capture',
+        'permeable_pavement': 'Permeable Pavement - Porous paving with gravel storage',
+        'rain_barrel': 'Rain Barrel - Container for roof runoff collection',
+        'vegetative_swale': 'Vegetative Swale - Grass-lined channel for conveyance',
+        'rain_garden': 'Rain Garden - Shallow depression with vegetation',
+        'rooftop_disconnection': 'Rooftop Disconnection - Redirect roof runoff to landscaping'
+    }
+
+def get_lid_layer_definitions() -> Dict[str, Dict[str, str]]:
+    """
+    Get layer definitions for each LID type.
+    
+    Returns:
+        Dictionary mapping LID types to their required layers.
+    """
+    return {
+        'bioretention_cell': {
+            'surface': 'Surface layer with ponding and vegetation',
+            'soil': 'Engineered soil layer for filtration',
+            'storage': 'Gravel storage layer for temporary storage',
+            'drain': 'Optional underdrain system'
+        },
+        'green_roof': {
+            'surface': 'Surface layer with vegetation',
+            'soil': 'Growing medium layer',
+            'drainage_mat': 'Drainage layer for water removal'
+        },
+        'infiltration_trench': {
+            'surface': 'Surface layer for ponding',
+            'storage': 'Gravel storage layer',
+            'drain': 'Optional underdrain system'
+        },
+        'permeable_pavement': {
+            'surface': 'Surface layer',
+            'pavement': 'Porous pavement layer',
+            'storage': 'Gravel storage layer',
+            'drain': 'Optional underdrain system'
+        },
+        'rain_barrel': {
+            'surface': 'Barrel storage surface',
+            'drain': 'Outlet/drain system'
+        },
+        'vegetative_swale': {
+            'surface': 'Vegetated surface with trapezoidal cross-section'
+        },
+        'rain_garden': {
+            'surface': 'Surface layer with ponding',
+            'soil': 'Soil layer for infiltration',
+            'storage': 'Optional storage layer'
+        },
+        'rooftop_disconnection': {
+            'surface': 'Surface layer for routing',
+            'drain': 'Roof drain system'
         }
     }

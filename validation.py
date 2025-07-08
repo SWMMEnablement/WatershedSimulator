@@ -31,6 +31,12 @@ def validate_parameters(parameters: Dict[str, Any], category: Optional[str] = No
     if category is None or category == 'climate':
         messages.extend(validate_climate_parameters(parameters.get('climate', {})))
     
+    if category is None or category == 'lid_controls':
+        messages.extend(validate_lid_controls(parameters.get('lid_controls', {})))
+    
+    if category is None or category == 'lid_usage':
+        messages.extend(validate_lid_usage(parameters.get('lid_usage', {})))
+    
     # Cross-parameter validation
     if category is None:
         messages.extend(validate_cross_parameters(parameters))
@@ -315,6 +321,173 @@ def validate_climate_parameters(params: Dict[str, Any]) -> List[str]:
     
     return messages
 
+def validate_lid_controls(params: Dict[str, Any]) -> List[str]:
+    """Validate LID controls parameters."""
+    messages = []
+    
+    if not params.get('enabled', False):
+        return messages  # Skip validation if LID controls are disabled
+    
+    # Validate each LID type
+    for lid_type, lid_params in params.items():
+        if lid_type == 'enabled' or not isinstance(lid_params, dict):
+            continue
+            
+        # Surface layer validation
+        if 'surface' in lid_params:
+            surface = lid_params['surface']
+            
+            berm_height = surface.get('berm_height', 0)
+            if berm_height < 0 or berm_height > 12:
+                messages.append(f"{lid_type}: Berm height should be between 0 and 12 inches")
+            
+            vegetation_volume = surface.get('vegetation_volume', 0)
+            if vegetation_volume < 0 or vegetation_volume > 0.3:
+                messages.append(f"{lid_type}: Vegetation volume should be between 0 and 0.3")
+            
+            surface_roughness = surface.get('surface_roughness', 0)
+            if surface_roughness < 0.01 or surface_roughness > 0.4:
+                messages.append(f"{lid_type}: Surface roughness should be between 0.01 and 0.4")
+            
+            surface_slope = surface.get('surface_slope', 0)
+            if surface_slope < 0 or surface_slope > 10:
+                messages.append(f"{lid_type}: Surface slope should be between 0 and 10%")
+        
+        # Soil layer validation
+        if 'soil' in lid_params:
+            soil = lid_params['soil']
+            
+            thickness = soil.get('thickness', 0)
+            if thickness < 2 or thickness > 48:
+                messages.append(f"{lid_type}: Soil thickness should be between 2 and 48 inches")
+            
+            porosity = soil.get('porosity', 0)
+            field_capacity = soil.get('field_capacity', 0)
+            wilting_point = soil.get('wilting_point', 0)
+            
+            if porosity < 0.3 or porosity > 0.7:
+                messages.append(f"{lid_type}: Porosity should be between 0.3 and 0.7")
+            
+            if field_capacity < 0.05 or field_capacity > 0.4:
+                messages.append(f"{lid_type}: Field capacity should be between 0.05 and 0.4")
+            
+            if wilting_point < 0.01 or wilting_point > 0.2:
+                messages.append(f"{lid_type}: Wilting point should be between 0.01 and 0.2")
+            
+            # Check logical relationships
+            if field_capacity >= porosity:
+                messages.append(f"{lid_type}: Field capacity must be less than porosity")
+            
+            if wilting_point >= field_capacity:
+                messages.append(f"{lid_type}: Wilting point must be less than field capacity")
+            
+            conductivity = soil.get('conductivity', 0)
+            if conductivity < 0.1 or conductivity > 10:
+                messages.append(f"{lid_type}: Conductivity should be between 0.1 and 10 in/hr")
+        
+        # Storage layer validation
+        if 'storage' in lid_params:
+            storage = lid_params['storage']
+            
+            thickness = storage.get('thickness', 0)
+            if thickness < 6 or thickness > 48:
+                messages.append(f"{lid_type}: Storage thickness should be between 6 and 48 inches")
+            
+            void_ratio = storage.get('void_ratio', 0)
+            if void_ratio < 0.3 or void_ratio > 0.7:
+                messages.append(f"{lid_type}: Storage void ratio should be between 0.3 and 0.7")
+            
+            seepage_rate = storage.get('seepage_rate', 0)
+            if seepage_rate < 0 or seepage_rate > 5:
+                messages.append(f"{lid_type}: Seepage rate should be between 0 and 5 in/hr")
+        
+        # Pavement layer validation (for permeable pavement)
+        if 'pavement' in lid_params:
+            pavement = lid_params['pavement']
+            
+            thickness = pavement.get('thickness', 0)
+            if thickness < 2 or thickness > 8:
+                messages.append(f"{lid_type}: Pavement thickness should be between 2 and 8 inches")
+            
+            void_ratio = pavement.get('void_ratio', 0)
+            if void_ratio < 0.1 or void_ratio > 0.3:
+                messages.append(f"{lid_type}: Pavement void ratio should be between 0.1 and 0.3")
+            
+            permeability = pavement.get('permeability', 0)
+            if permeability < 10 or permeability > 1000:
+                messages.append(f"{lid_type}: Permeability should be between 10 and 1000 in/hr")
+        
+        # Drain layer validation
+        if 'drain' in lid_params:
+            drain = lid_params['drain']
+            
+            drain_coefficient = drain.get('drain_coefficient', 0)
+            if drain_coefficient > 0:  # Only validate if drain is enabled
+                if drain_coefficient < 0.1 or drain_coefficient > 10:
+                    messages.append(f"{lid_type}: Drain coefficient should be between 0.1 and 10")
+                
+                drain_exponent = drain.get('drain_exponent', 0)
+                if drain_exponent < 0.1 or drain_exponent > 2:
+                    messages.append(f"{lid_type}: Drain exponent should be between 0.1 and 2")
+    
+    return messages
+
+def validate_lid_usage(params: Dict[str, Any]) -> List[str]:
+    """Validate LID usage parameters."""
+    messages = []
+    
+    if not params.get('enabled', False):
+        return messages  # Skip validation if LID usage is disabled
+    
+    assignments = params.get('subcatchment_assignments', {})
+    
+    for subcatch_id, assignment in assignments.items():
+        # Validate subcatchment ID
+        if not subcatch_id or not subcatch_id.strip():
+            messages.append("Subcatchment ID cannot be empty")
+        
+        # Validate LID type
+        lid_type = assignment.get('lid_type', '')
+        valid_lid_types = ['bioretention_cell', 'green_roof', 'infiltration_trench', 
+                          'permeable_pavement', 'rain_barrel', 'vegetative_swale', 
+                          'rain_garden', 'rooftop_disconnection']
+        if lid_type not in valid_lid_types:
+            messages.append(f"{subcatch_id}: Invalid LID type '{lid_type}'")
+        
+        # Validate numeric parameters
+        number_replicate = assignment.get('number_replicate', 0)
+        if number_replicate < 1 or number_replicate > 100:
+            messages.append(f"{subcatch_id}: Number of replicates should be between 1 and 100")
+        
+        area = assignment.get('area', 0)
+        if area < 100 or area > 10000:
+            messages.append(f"{subcatch_id}: LID area should be between 100 and 10,000 sq ft")
+        
+        width = assignment.get('width', 0)
+        if width < 10 or width > 200:
+            messages.append(f"{subcatch_id}: LID width should be between 10 and 200 ft")
+        
+        initial_saturation = assignment.get('initial_saturation', 0)
+        if initial_saturation < 0 or initial_saturation > 1:
+            messages.append(f"{subcatch_id}: Initial saturation should be between 0 and 1")
+        
+        from_imperv = assignment.get('from_imperv', 0)
+        if from_imperv < 0 or from_imperv > 100:
+            messages.append(f"{subcatch_id}: From impervious should be between 0 and 100%")
+        
+        to_perv = assignment.get('to_perv', 0)
+        if to_perv < 0 or to_perv > 100:
+            messages.append(f"{subcatch_id}: To pervious should be between 0 and 100%")
+        
+        # Check logical consistency
+        if area > 0 and width > 0:
+            length = area / width
+            aspect_ratio = length / width
+            if aspect_ratio > 10:
+                messages.append(f"{subcatch_id}: LID aspect ratio is high (>10:1) - consider adjusting area/width")
+    
+    return messages
+
 def validate_cross_parameters(parameters: Dict[str, Any]) -> List[str]:
     """Validate relationships between parameter categories."""
     messages = []
@@ -343,6 +516,27 @@ def validate_cross_parameters(parameters: Dict[str, Any]) -> List[str]:
     
     if method == 'Curve Number' and pct_impervious > 95:
         messages.append("Curve Number method may not be appropriate for highly impervious areas (>95%)")
+    
+    # Check LID consistency
+    lid_controls = parameters.get('lid_controls', {})
+    lid_usage = parameters.get('lid_usage', {})
+    
+    if lid_usage.get('enabled', False) and not lid_controls.get('enabled', False):
+        messages.append("LID usage is enabled but LID controls are disabled")
+    
+    if lid_controls.get('enabled', False):
+        assignments = lid_usage.get('subcatchment_assignments', {})
+        for subcatch_id, assignment in assignments.items():
+            lid_type = assignment.get('lid_type', '')
+            if lid_type not in lid_controls:
+                messages.append(f"LID type '{lid_type}' used in {subcatch_id} but not defined in controls")
+            
+            # Check if LID area is reasonable compared to subcatchment area
+            lid_area = assignment.get('area', 0) * assignment.get('number_replicate', 1)
+            subcatch_area_sqft = area * 43560  # Convert acres to sq ft
+            
+            if lid_area > subcatch_area_sqft * 0.5:  # LID area > 50% of subcatchment
+                messages.append(f"{subcatch_id}: LID area ({lid_area:.0f} sq ft) is large compared to subcatchment area")
     
     # Check climate/evaporation consistency
     climate = parameters.get('climate', {})

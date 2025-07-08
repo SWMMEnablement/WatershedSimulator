@@ -147,8 +147,8 @@ def create_parameter_summary(parameters: Dict[str, Any]) -> go.Figure:
         rows=2, cols=2,
         subplot_titles=('Subcatchment Properties', 'Surface Characteristics', 
                        'Infiltration Parameters', 'Climate Settings'),
-        specs=[[{"type": "xy"}, {"type": "xy"}],
-               [{"type": "xy"}, {"type": "xy"}]],
+        specs=[[{"type": "xy"}, {"type": "domain"}],
+               [{"type": "xy"}, {"type": "indicator"}]],
         horizontal_spacing=0.1,
         vertical_spacing=0.15
     )
@@ -513,6 +513,90 @@ def create_uncertainty_bands(results: Dict[str, Any],
         yaxis_title="Runoff (cfs)",
         plot_bgcolor='white',
         paper_bgcolor='white'
+    )
+    
+    return fig
+
+def create_runoff_line_graph(results: Dict[str, Any]) -> go.Figure:
+    """
+    Create a simple line graph for runoff output.
+    
+    Args:
+        results: Dictionary containing simulation results
+        
+    Returns:
+        Plotly figure with runoff line graph
+    """
+    fig = go.Figure()
+    
+    if 'time_series' in results:
+        time_series = results['time_series']
+        time = time_series['time']
+        runoff = time_series['runoff']
+        
+        # Add runoff line
+        fig.add_trace(
+            go.Scatter(
+                x=time,
+                y=runoff,
+                mode='lines+markers',
+                name='Runoff',
+                line=dict(color='blue', width=3),
+                marker=dict(size=6, color='darkblue'),
+                fill='tozeroy',
+                fillcolor='rgba(0,100,255,0.2)'
+            )
+        )
+        
+        # Add peak runoff annotation
+        peak_idx = np.argmax(runoff)
+        peak_time = time[peak_idx]
+        peak_flow = runoff[peak_idx]
+        
+        fig.add_annotation(
+            x=peak_time,
+            y=peak_flow,
+            text=f"Peak: {peak_flow:.1f} cfs<br>at {peak_time:.1f} hours",
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=2,
+            arrowcolor="red",
+            bgcolor="white",
+            bordercolor="red",
+            borderwidth=2
+        )
+    
+    # Update layout
+    fig.update_layout(
+        title="Watershed Runoff Hydrograph",
+        xaxis_title="Time (hours)",
+        yaxis_title="Runoff (cubic feet per second)",
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        showlegend=True,
+        legend=dict(x=0.7, y=0.9),
+        height=500,
+        hovermode='x unified'
+    )
+    
+    # Update axes
+    fig.update_xaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='lightgray',
+        showline=True,
+        linewidth=2,
+        linecolor='black'
+    )
+    
+    fig.update_yaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='lightgray',
+        showline=True,
+        linewidth=2,
+        linecolor='black'
     )
     
     return fig

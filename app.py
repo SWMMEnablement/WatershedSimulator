@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 from swmm_model import SWMMModel
 from parameter_defaults import get_default_parameters
 from validation import validate_parameters, get_validation_messages
-from visualization import create_results_plots, create_parameter_summary
+from visualization import create_results_plots, create_parameter_summary, create_runoff_line_graph
 
 # Set page configuration
 st.set_page_config(
@@ -642,9 +642,16 @@ def results_display():
         )
     
     # Results visualization
+    st.subheader("Runoff Hydrograph")
     if 'time_series' in results:
-        fig = create_results_plots(results)
-        st.plotly_chart(fig, use_container_width=True)
+        # Create the main runoff line graph
+        runoff_fig = create_runoff_line_graph(results)
+        st.plotly_chart(runoff_fig, use_container_width=True)
+        
+        # Option to show comprehensive plots
+        if st.checkbox("Show Detailed Analysis Plots"):
+            fig = create_results_plots(results)
+            st.plotly_chart(fig, use_container_width=True)
     
     # Detailed results table
     st.subheader("Detailed Results")

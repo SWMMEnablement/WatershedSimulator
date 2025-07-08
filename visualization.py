@@ -569,9 +569,11 @@ def create_runoff_line_graph(results: Dict[str, Any]) -> go.Figure:
     
     # Update layout
     fig.update_layout(
-        title="Watershed Runoff Hydrograph",
-        xaxis_title="Time (hours)",
-        yaxis_title="Runoff (cubic feet per second)",
+        title=dict(
+            text="Watershed Runoff Hydrograph",
+            font=dict(size=20, color='black', family='Arial Black'),
+            x=0.5
+        ),
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=True,
@@ -580,23 +582,29 @@ def create_runoff_line_graph(results: Dict[str, Any]) -> go.Figure:
         hovermode='x unified'
     )
     
-    # Update axes
+    # Update axes with prominent labels
     fig.update_xaxes(
+        title_text="Time (hours)",
+        title_font=dict(size=16, color='black', family='Arial Black'),
         showgrid=True,
         gridwidth=1,
         gridcolor='lightgray',
         showline=True,
         linewidth=2,
-        linecolor='black'
+        linecolor='black',
+        tickfont=dict(size=12, color='black')
     )
     
     fig.update_yaxes(
+        title_text="Runoff (cubic feet per second)",
+        title_font=dict(size=16, color='black', family='Arial Black'),
         showgrid=True,
         gridwidth=1,
         gridcolor='lightgray',
         showline=True,
         linewidth=2,
-        linecolor='black'
+        linecolor='black',
+        tickfont=dict(size=12, color='black')
     )
     
     return fig

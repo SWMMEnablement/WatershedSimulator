@@ -88,7 +88,9 @@ The application follows a modular architecture with separate concerns:
 
 ## Changelog
 
-- July 08, 2025. Initial setup
+- July 08, 2025: Initial setup - Created comprehensive SWMM5 watershed modeling application
+- July 08, 2025: Added runoff line graph visualization - Created dedicated hydrograph display with peak annotations
+- July 08, 2025: Implemented auto-simulation - Application now runs simulation automatically on startup for immediate results
 
 ## User Preferences
 

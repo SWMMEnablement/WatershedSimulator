@@ -662,11 +662,6 @@ def results_display():
     # Results visualization
     st.subheader("Runoff Hydrograph")
     if 'time_series' in results:
-        # Debug information
-        time_series = results['time_series']
-        st.write(f"Debug: Time points: {len(time_series['time'])}, Runoff values: {len(time_series['runoff'])}")
-        st.write(f"Debug: Peak runoff: {max(time_series['runoff']):.2f} cfs")
-        
         # Create the main runoff line graph
         runoff_fig = create_runoff_line_graph(results)
         st.plotly_chart(runoff_fig, use_container_width=True)
@@ -675,9 +670,6 @@ def results_display():
         if st.checkbox("Show Detailed Analysis Plots"):
             fig = create_results_plots(results)
             st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.error("Debug: No time_series found in results")
-        st.write("Debug: Available keys in results:", list(results.keys()))
     
     # Detailed results table
     st.subheader("Detailed Results")

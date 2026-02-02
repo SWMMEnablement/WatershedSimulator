@@ -22,6 +22,132 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS for water-themed dark mode
+st.markdown("""
+<style>
+    /* Water-themed background gradient */
+    .stApp {
+        background: linear-gradient(180deg, #0a1929 0%, #0d2847 30%, #0a3d62 60%, #1a5276 100%);
+        background-attachment: fixed;
+    }
+    
+    /* Animated water wave effect at bottom */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 150px;
+        background: linear-gradient(180deg, transparent, rgba(0, 180, 216, 0.1));
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0d2847 0%, #0a3d62 100%);
+        border-right: 1px solid rgba(0, 180, 216, 0.3);
+    }
+    
+    /* Header styling */
+    h1, h2, h3 {
+        color: #00b4d8 !important;
+        text-shadow: 0 0 10px rgba(0, 180, 216, 0.3);
+    }
+    
+    /* Card/container styling */
+    [data-testid="stVerticalBlock"] > div {
+        border-radius: 10px;
+    }
+    
+    /* Input fields styling */
+    .stNumberInput > div > div > input,
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div {
+        background-color: rgba(13, 40, 71, 0.8) !important;
+        border: 1px solid rgba(0, 180, 216, 0.3) !important;
+        color: #e0f7fa !important;
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 180, 216, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%);
+        box-shadow: 0 6px 20px rgba(0, 180, 216, 0.5);
+        transform: translateY(-2px);
+    }
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: rgba(13, 40, 71, 0.5);
+        border-radius: 10px;
+        padding: 5px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        color: #90caf9;
+        border-radius: 8px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: rgba(0, 180, 216, 0.2) !important;
+        color: #00b4d8 !important;
+    }
+    
+    /* Slider styling */
+    .stSlider > div > div > div > div {
+        background-color: #00b4d8 !important;
+    }
+    
+    /* Success/Error message styling */
+    .stSuccess {
+        background-color: rgba(0, 180, 136, 0.2);
+        border: 1px solid #00b488;
+    }
+    
+    .stError {
+        background-color: rgba(255, 82, 82, 0.2);
+        border: 1px solid #ff5252;
+    }
+    
+    /* Metric styling */
+    [data-testid="stMetricValue"] {
+        color: #00b4d8 !important;
+    }
+    
+    /* DataFrame styling */
+    .stDataFrame {
+        background-color: rgba(13, 40, 71, 0.5);
+        border-radius: 10px;
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background-color: rgba(0, 180, 216, 0.1);
+        border-radius: 8px;
+    }
+    
+    /* Info box styling */
+    .stInfo {
+        background-color: rgba(0, 180, 216, 0.1);
+        border: 1px solid rgba(0, 180, 216, 0.3);
+    }
+    
+    /* Plotly chart background */
+    .js-plotly-plot .plotly .bg {
+        fill: transparent !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Initialize session state
 if 'model' not in st.session_state:
     st.session_state.model = SWMMModel()

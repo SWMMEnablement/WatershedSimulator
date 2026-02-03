@@ -190,12 +190,27 @@ def main():
             run_simulation()
         
         # Export options
-        st.header("Export Options")
-        if st.button("📥 Export SWMM5 .inp File"):
-            export_inp_file()
+        st.header("📥 Export Options")
         
-        if st.button("📄 Export Parameters CSV"):
-            export_parameters_csv()
+        with st.expander("Export Files", expanded=True):
+            st.markdown("**Native SWMM Format**")
+            if st.button("📥 Download SWMM .INP File", key="export_inp"):
+                export_inp_file()
+            
+            st.markdown("**Civil 3D Compatible**")
+            if st.button("🗺️ Export to LandXML", key="export_landxml"):
+                export_landxml()
+            
+            st.markdown("**Spreadsheet Analysis**")
+            if st.button("📊 Download Results CSV", key="export_results_csv"):
+                export_results_csv()
+            
+            if st.button("📄 Download Parameters CSV", key="export_params_csv"):
+                export_parameters_csv()
+            
+            st.markdown("**Documentation**")
+            if st.button("📋 Generate PDF Report", key="export_pdf"):
+                export_pdf_report()
         
         # Model information
         st.header("Model Information")
@@ -949,6 +964,290 @@ def export_parameters_csv():
         
     except Exception as e:
         st.error(f"Export failed: {str(e)}")
+
+def export_landxml():
+    """Export watershed data to LandXML format for Civil 3D compatibility."""
+    try:
+        params = st.session_state.parameters
+        timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        
+        # Create LandXML content
+        landxml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.landxml.org/schema/LandXML-1.2 http://www.landxml.org/schema/LandXML-1.2/LandXML-1.2.xsd"
+         date="{datetime.now().strftime('%Y-%m-%d')}" 
+         time="{datetime.now().strftime('%H:%M:%S')}"
+         version="1.2">
+  <Units>
+    <Imperial areaUnit="acre" linearUnit="foot" volumeUnit="cubicFeet" 
+              flowUnit="cubicFeetPerSecond" temperatureUnit="fahrenheit"/>
+  </Units>
+  <Project name="SWMM5 Watershed Model">
+    <Feature code="SWMM5Export" source="SWMM5 Modeling Application">
+      <Property label="ExportDate" value="{timestamp}"/>
+      <Property label="Application" value="SWMM5 Watershed Runoff Modeling"/>
+    </Feature>
+  </Project>
+  <Watersheds>
+    <Watershed name="Subcatchment_1" area="{params['subcatchment']['area']}" 
+               desc="SWMM5 Subcatchment Export">
+      <Outlet refName="{params['subcatchment']['outlet_name']}" 
+              outletType="{params['subcatchment']['outlet_type']}"/>
+      <Watershed name="Contributing_Area">
+        <WatershedCatchment area="{params['subcatchment']['area']}" 
+                           width="{params['subcatchment']['width']}"
+                           slope="{params['subcatchment']['slope']}">
+          <SurfaceProperties>
+            <Property label="PercentImpervious" value="{params['surface']['pct_impervious']}"/>
+            <Property label="ManningsN_Impervious" value="{params['surface']['n_imperv']}"/>
+            <Property label="ManningsN_Pervious" value="{params['surface']['n_perv']}"/>
+            <Property label="DepressionStorage_Impervious" value="{params['surface']['dstore_imperv']}"/>
+            <Property label="DepressionStorage_Pervious" value="{params['surface']['dstore_perv']}"/>
+          </SurfaceProperties>
+          <InfiltrationProperties>
+            <Property label="Method" value="{params['infiltration']['method']}"/>
+          </InfiltrationProperties>
+        </WatershedCatchment>
+      </Watershed>
+    </Watershed>
+  </Watersheds>
+  <PipeNetworks>
+    <PipeNetwork name="Storm_Drainage_System" desc="SWMM5 Drainage Network">
+      <Structs>
+        <Struct name="{params['subcatchment']['outlet_name']}" 
+                desc="Outlet Node" structType="outfall">
+          <Feature code="SWMM_Outlet"/>
+        </Struct>
+      </Structs>
+    </PipeNetwork>
+  </PipeNetworks>
+</LandXML>'''
+        
+        st.download_button(
+            label="Download LandXML File",
+            data=landxml_content,
+            file_name=f"watershed_landxml_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xml",
+            mime="application/xml"
+        )
+        st.success("LandXML file ready for download!")
+        
+    except Exception as e:
+        st.error(f"LandXML export failed: {str(e)}")
+
+def export_results_csv():
+    """Export simulation results as CSV file."""
+    try:
+        results = st.session_state.simulation_results
+        
+        if results is None:
+            st.warning("No simulation results available. Please run a simulation first.")
+            return
+        
+        # Create results DataFrame
+        results_data = []
+        
+        # Add time series data if available
+        if 'time_series' in results:
+            for i, time_point in enumerate(results['time_series'].get('time', [])):
+                row = {'Time (min)': time_point}
+                if 'runoff' in results['time_series']:
+                    row['Runoff (cfs)'] = results['time_series']['runoff'][i] if i < len(results['time_series']['runoff']) else ''
+                if 'infiltration' in results['time_series']:
+                    row['Infiltration (in/hr)'] = results['time_series']['infiltration'][i] if i < len(results['time_series']['infiltration']) else ''
+                if 'evaporation' in results['time_series']:
+                    row['Evaporation (in/day)'] = results['time_series']['evaporation'][i] if i < len(results['time_series']['evaporation']) else ''
+                results_data.append(row)
+        
+        if results_data:
+            df = pd.DataFrame(results_data)
+            csv_content = df.to_csv(index=False)
+            
+            st.download_button(
+                label="Download Results CSV",
+                data=csv_content,
+                file_name=f"simulation_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
+            st.success("Results CSV ready for download!")
+        else:
+            # Create summary results if no time series
+            summary_data = []
+            if 'summary' in results:
+                for key, value in results['summary'].items():
+                    summary_data.append({'Metric': key, 'Value': value})
+            
+            if summary_data:
+                df = pd.DataFrame(summary_data)
+                csv_content = df.to_csv(index=False)
+                
+                st.download_button(
+                    label="Download Results Summary CSV",
+                    data=csv_content,
+                    file_name=f"results_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+                st.success("Results summary CSV ready for download!")
+            else:
+                st.warning("No results data available to export.")
+        
+    except Exception as e:
+        st.error(f"Results CSV export failed: {str(e)}")
+
+def export_pdf_report():
+    """Generate PDF report of model parameters and results."""
+    try:
+        from fpdf import FPDF
+        
+        params = st.session_state.parameters
+        results = st.session_state.simulation_results
+        
+        # Create PDF
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # Title
+        pdf.set_font('Helvetica', 'B', 20)
+        pdf.set_text_color(0, 102, 153)
+        pdf.cell(0, 15, 'SWMM5 Watershed Runoff Model Report', ln=True, align='C')
+        
+        # Subtitle
+        pdf.set_font('Helvetica', '', 12)
+        pdf.set_text_color(100, 100, 100)
+        pdf.cell(0, 10, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True, align='C')
+        pdf.ln(10)
+        
+        # Subcatchment Parameters Section
+        pdf.set_font('Helvetica', 'B', 14)
+        pdf.set_text_color(0, 80, 120)
+        pdf.cell(0, 10, '1. Subcatchment Parameters', ln=True)
+        pdf.set_draw_color(0, 180, 216)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+        
+        pdf.set_font('Helvetica', '', 11)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(0, 7, f"Area: {params['subcatchment']['area']} acres", ln=True)
+        pdf.cell(0, 7, f"Width: {params['subcatchment']['width']} feet", ln=True)
+        pdf.cell(0, 7, f"Slope: {params['subcatchment']['slope']}%", ln=True)
+        pdf.cell(0, 7, f"Outlet: {params['subcatchment']['outlet_name']} ({params['subcatchment']['outlet_type']})", ln=True)
+        pdf.ln(5)
+        
+        # Surface Properties Section
+        pdf.set_font('Helvetica', 'B', 14)
+        pdf.set_text_color(0, 80, 120)
+        pdf.cell(0, 10, '2. Surface Properties', ln=True)
+        pdf.set_draw_color(0, 180, 216)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+        
+        pdf.set_font('Helvetica', '', 11)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(0, 7, f"Percent Impervious: {params['surface']['pct_impervious']}%", ln=True)
+        pdf.cell(0, 7, f"Manning's n (Impervious): {params['surface']['n_imperv']}", ln=True)
+        pdf.cell(0, 7, f"Manning's n (Pervious): {params['surface']['n_perv']}", ln=True)
+        pdf.cell(0, 7, f"Depression Storage (Impervious): {params['surface']['dstore_imperv']} inches", ln=True)
+        pdf.cell(0, 7, f"Depression Storage (Pervious): {params['surface']['dstore_perv']} inches", ln=True)
+        pdf.ln(5)
+        
+        # Infiltration Parameters Section
+        pdf.set_font('Helvetica', 'B', 14)
+        pdf.set_text_color(0, 80, 120)
+        pdf.cell(0, 10, '3. Infiltration Parameters', ln=True)
+        pdf.set_draw_color(0, 180, 216)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+        
+        pdf.set_font('Helvetica', '', 11)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(0, 7, f"Method: {params['infiltration']['method']}", ln=True)
+        
+        # Method-specific parameters
+        method = params['infiltration']['method'].lower().replace(' ', '_').replace('-', '_')
+        if 'horton' in method and 'horton' in params['infiltration']:
+            pdf.cell(0, 7, f"Max Rate: {params['infiltration']['horton']['max_rate']} in/hr", ln=True)
+            pdf.cell(0, 7, f"Min Rate: {params['infiltration']['horton']['min_rate']} in/hr", ln=True)
+            pdf.cell(0, 7, f"Decay Constant: {params['infiltration']['horton']['decay_constant']} 1/hr", ln=True)
+        elif 'green' in method and 'green_ampt' in params['infiltration']:
+            pdf.cell(0, 7, f"Suction Head: {params['infiltration']['green_ampt']['suction_head']} inches", ln=True)
+            pdf.cell(0, 7, f"Conductivity: {params['infiltration']['green_ampt']['conductivity']} in/hr", ln=True)
+        elif 'curve' in method and 'curve_number' in params['infiltration']:
+            pdf.cell(0, 7, f"Curve Number: {params['infiltration']['curve_number']['curve_number']}", ln=True)
+        pdf.ln(5)
+        
+        # LID Controls Section (if enabled)
+        if params.get('lid_controls', {}).get('enabled', False):
+            pdf.set_font('Helvetica', 'B', 14)
+            pdf.set_text_color(0, 80, 120)
+            pdf.cell(0, 10, '4. LID Controls', ln=True)
+            pdf.set_draw_color(0, 180, 216)
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            pdf.ln(5)
+            
+            pdf.set_font('Helvetica', '', 11)
+            pdf.set_text_color(0, 0, 0)
+            pdf.cell(0, 7, "LID Controls: Enabled", ln=True)
+            
+            # List configured LID types
+            lid_types = {
+                'bio_retention': 'Bio-retention Cell',
+                'green_roof': 'Green Roof',
+                'infiltration_trench': 'Infiltration Trench',
+                'permeable_pavement': 'Permeable Pavement',
+                'rain_barrel': 'Rain Barrel',
+                'vegetative_swale': 'Vegetative Swale',
+                'rain_garden': 'Rain Garden',
+                'rooftop_disconnection': 'Rooftop Disconnection'
+            }
+            for lid_key, lid_name in lid_types.items():
+                if lid_key in params.get('lid_controls', {}):
+                    pdf.cell(0, 7, f"  - {lid_name}: Configured", ln=True)
+            pdf.ln(5)
+        
+        # Simulation Results Section
+        if results:
+            pdf.add_page()
+            pdf.set_font('Helvetica', 'B', 14)
+            pdf.set_text_color(0, 80, 120)
+            pdf.cell(0, 10, '5. Simulation Results Summary', ln=True)
+            pdf.set_draw_color(0, 180, 216)
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            pdf.ln(5)
+            
+            pdf.set_font('Helvetica', '', 11)
+            pdf.set_text_color(0, 0, 0)
+            
+            if 'summary' in results:
+                for key, value in results['summary'].items():
+                    clean_key = key.replace('_', ' ').title()
+                    pdf.cell(0, 7, f"{clean_key}: {value}", ln=True)
+            
+            if 'peak_runoff' in results:
+                pdf.cell(0, 7, f"Peak Runoff: {results['peak_runoff']:.4f} cfs", ln=True)
+            if 'total_runoff' in results:
+                pdf.cell(0, 7, f"Total Runoff Volume: {results['total_runoff']:.4f} acre-ft", ln=True)
+            if 'runoff_coefficient' in results:
+                pdf.cell(0, 7, f"Runoff Coefficient: {results['runoff_coefficient']:.3f}", ln=True)
+        
+        # Footer
+        pdf.set_y(-30)
+        pdf.set_font('Helvetica', 'I', 10)
+        pdf.set_text_color(128, 128, 128)
+        pdf.cell(0, 10, 'Generated by SWMM5 Watershed Runoff Modeling Application', align='C')
+        
+        # Generate PDF bytes
+        pdf_output = pdf.output()
+        
+        st.download_button(
+            label="Download PDF Report",
+            data=bytes(pdf_output),
+            file_name=f"swmm5_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+            mime="application/pdf"
+        )
+        st.success("PDF report ready for download!")
+        
+    except Exception as e:
+        st.error(f"PDF report generation failed: {str(e)}")
 
 def lid_controls_parameters():
     """LID Controls configuration interface."""

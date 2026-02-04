@@ -1,26 +1,50 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime, timedelta
-import io
-import os
-from typing import Dict, Any, Optional
 
-# Import custom modules
-from swmm_model import SWMMModel
-from parameter_defaults import get_default_parameters
-from validation import validate_parameters, get_validation_messages
-from visualization import create_results_plots, create_parameter_summary, create_runoff_line_graph
-
-# Set page configuration
+# Set page configuration FIRST - before any other imports
 st.set_page_config(
     page_title="SWMM5 Watershed Runoff Modeling",
     page_icon="🌊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Show title immediately while loading
+st.title("🌊 SWMM5 Watershed Runoff Modeling Application")
+
+# Now load other imports with caching
+@st.cache_resource
+def load_heavy_imports():
+    """Lazy load heavy imports."""
+    import pandas as pd
+    import numpy as np
+    import plotly.graph_objects as go
+    import plotly.express as px
+    return pd, np, go, px
+
+# Load standard library imports
+from datetime import datetime, timedelta
+import io
+import os
+from typing import Dict, Any, Optional
+
+# Lazy load heavy modules
+pd, np, go, px = load_heavy_imports()
+
+# Cache the SWMM model creation
+@st.cache_resource
+def get_swmm_model():
+    from swmm_model import SWMMModel
+    return SWMMModel()
+
+# Cache default parameters
+@st.cache_data
+def get_cached_default_parameters():
+    from parameter_defaults import get_default_parameters
+    return get_default_parameters()
+
+# Import validation and visualization (lightweight)
+from validation import validate_parameters, get_validation_messages
+from visualization import create_results_plots, create_parameter_summary, create_runoff_line_graph
 
 # Custom CSS for water-themed dark mode
 st.markdown("""
@@ -148,11 +172,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
+# Initialize session state with cached resources
 if 'model' not in st.session_state:
-    st.session_state.model = SWMMModel()
+    st.session_state.model = get_swmm_model()
 if 'parameters' not in st.session_state:
-    st.session_state.parameters = get_default_parameters()
+    st.session_state.parameters = get_cached_default_parameters().copy()
 if 'simulation_results' not in st.session_state:
     st.session_state.simulation_results = None
 if 'validation_messages' not in st.session_state:
@@ -161,10 +185,10 @@ if 'auto_run_done' not in st.session_state:
     st.session_state.auto_run_done = False
 
 def main():
-    st.title("🌊 SWMM5 Watershed Runoff Modeling Application")
+    # Title already shown at top of file for fast loading
     st.markdown("*Comprehensive parameter input, validation, and simulation capabilities*")
     
-    # Show welcome message on first load instead of auto-running simulation
+    # Show welcome message on first load
     if not st.session_state.auto_run_done:
         st.info("Welcome! Configure your watershed parameters in the tabs below, then click **Run Simulation** in the sidebar to generate results.")
         st.session_state.auto_run_done = True

@@ -166,14 +166,16 @@ def main():
     
     # Auto-run simulation on first load with default parameters
     if not st.session_state.auto_run_done:
-        try:
-            model = st.session_state.model
-            model.create_input_file(st.session_state.parameters)
-            results = model.run_simulation()
-            st.session_state.simulation_results = results
-            st.session_state.auto_run_done = True
-        except Exception as e:
-            st.error(f"Initial simulation failed: {str(e)}")
+        with st.spinner('Running initial simulation with default parameters...'):
+            try:
+                model = st.session_state.model
+                model.create_input_file(st.session_state.parameters)
+                results = model.run_simulation()
+                st.session_state.simulation_results = results
+                st.session_state.auto_run_done = True
+            except Exception as e:
+                st.session_state.auto_run_done = True  # Prevent infinite loop
+                st.error(f"Initial simulation failed: {str(e)}")
     
     # Sidebar for navigation and quick actions
     with st.sidebar:

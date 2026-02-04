@@ -1,0 +1,422 @@
+{
+  "application": {
+    "name": "SWMM5 Watershed Runoff Modeling Application",
+    "description": "A comprehensive Streamlit-based web application for stormwater management modeling using SWMM5 (Storm Water Management Model). Provides parameter configuration, validation, simulation, and visualization capabilities for urban watershed analysis.",
+    "version": "1.0.0",
+    "framework": "Streamlit",
+    "language": "Python",
+    "url_pattern": "watershed-simulator-{username}.replit.app"
+  },
+  "features": {
+    "core_functionality": [
+      {
+        "name": "Watershed Parameter Configuration",
+        "description": "Configure subcatchment geometry, surface properties, infiltration, and climate parameters",
+        "capabilities": [
+          "Area and width input in acres/feet",
+          "Slope percentage configuration",
+          "Outlet type and name assignment",
+          "Curb length specification"
+        ]
+      },
+      {
+        "name": "Surface Properties Management",
+        "description": "Configure impervious and pervious area characteristics",
+        "capabilities": [
+          "Percent impervious slider (0-100%)",
+          "Manning's roughness coefficients for impervious/pervious areas",
+          "Depression storage depths",
+          "Subarea routing options (OUTLET, IMPERV, PERV)",
+          "Surface type presets (Residential, Commercial, Industrial, Forest, Agricultural)"
+        ]
+      },
+      {
+        "name": "Infiltration Modeling",
+        "description": "Multiple infiltration calculation methods with full parameter support",
+        "methods": [
+          {
+            "name": "Horton",
+            "parameters": ["max_rate", "min_rate", "decay_constant", "drying_time"]
+          },
+          {
+            "name": "Green-Ampt",
+            "parameters": ["suction_head", "conductivity", "initial_deficit"]
+          },
+          {
+            "name": "Curve Number",
+            "parameters": ["curve_number", "conductivity", "drying_time"]
+          },
+          {
+            "name": "Modified Horton",
+            "parameters": ["max_rate", "min_rate", "decay_constant", "drying_time", "max_volume"]
+          },
+          {
+            "name": "Modified Green-Ampt",
+            "parameters": ["suction_head", "conductivity", "initial_deficit", "redistribution_factor"]
+          }
+        ],
+        "soil_presets": ["Sand", "Loamy Sand", "Sandy Loam", "Loam", "Silt Loam", "Clay Loam", "Clay"]
+      },
+      {
+        "name": "Climate Data Configuration",
+        "description": "Evaporation and temperature settings for simulation",
+        "capabilities": [
+          "Evaporation methods (Constant, Monthly, Time Series, Temperature)",
+          "Monthly evaporation rate input",
+          "Recovery factor configuration",
+          "Temperature method selection",
+          "Wind speed input",
+          "Snow modeling with temperature threshold and melt coefficient"
+        ]
+      }
+    ],
+    "lid_controls": {
+      "description": "Low Impact Development (LID) green infrastructure modeling",
+      "lid_types": [
+        {
+          "id": "bio_retention",
+          "name": "Bio-retention Cell",
+          "description": "Vegetated depression that collects and filters stormwater runoff",
+          "layers": ["surface", "soil", "storage", "underdrain"],
+          "parameters": {
+            "surface": {
+              "berm_height": {"unit": "inches", "range": [0, 24], "default": 6},
+              "vegetation_volume": {"unit": "fraction", "range": [0, 1], "default": 0.1},
+              "roughness": {"unit": "Manning's n", "range": [0.01, 0.8], "default": 0.1},
+              "slope": {"unit": "percent", "range": [0, 10], "default": 1}
+            },
+            "soil": {
+              "thickness": {"unit": "inches", "range": [6, 48], "default": 18},
+              "porosity": {"unit": "fraction", "range": [0.3, 0.6], "default": 0.5},
+              "field_capacity": {"unit": "fraction", "range": [0.1, 0.5], "default": 0.2},
+              "wilting_point": {"unit": "fraction", "range": [0.05, 0.3], "default": 0.1},
+              "conductivity": {"unit": "in/hr", "range": [0.1, 10], "default": 0.5},
+              "conductivity_slope": {"unit": "slope", "range": [1, 100], "default": 10},
+              "suction_head": {"unit": "inches", "range": [1, 20], "default": 3.5}
+            },
+            "storage": {
+              "height": {"unit": "inches", "range": [0, 48], "default": 12},
+              "void_ratio": {"unit": "fraction", "range": [0.5, 0.95], "default": 0.75},
+              "seepage_rate": {"unit": "in/hr", "range": [0, 10], "default": 0.5}
+            },
+            "underdrain": {
+              "drain_coefficient": {"unit": "in/hr", "range": [0, 10], "default": 0},
+              "drain_exponent": {"unit": "exponent", "range": [0, 2], "default": 0.5},
+              "drain_offset": {"unit": "inches", "range": [0, 12], "default": 6}
+            }
+          }
+        },
+        {
+          "id": "green_roof",
+          "name": "Green Roof",
+          "description": "Vegetated rooftop system that reduces runoff and provides insulation",
+          "layers": ["surface", "soil", "drainage_mat"]
+        },
+        {
+          "id": "infiltration_trench",
+          "name": "Infiltration Trench",
+          "description": "Gravel-filled trench that captures and infiltrates stormwater",
+          "layers": ["surface", "storage", "underdrain"]
+        },
+        {
+          "id": "permeable_pavement",
+          "name": "Permeable Pavement",
+          "description": "Porous surface that allows water to infiltrate through pavement",
+          "layers": ["surface", "pavement", "storage", "underdrain"]
+        },
+        {
+          "id": "rain_barrel",
+          "name": "Rain Barrel",
+          "description": "Container that collects and stores rooftop runoff for later use",
+          "layers": ["storage", "drain"]
+        },
+        {
+          "id": "vegetative_swale",
+          "name": "Vegetative Swale",
+          "description": "Shallow vegetated channel that conveys and treats stormwater",
+          "layers": ["surface"],
+          "geometry": "trapezoidal cross-section"
+        },
+        {
+          "id": "rain_garden",
+          "name": "Rain Garden",
+          "description": "Shallow planted depression designed to absorb stormwater runoff",
+          "layers": ["surface", "soil", "storage"]
+        },
+        {
+          "id": "rooftop_disconnection",
+          "name": "Rooftop Disconnection",
+          "description": "Redirects rooftop runoff to pervious areas for infiltration",
+          "layers": ["surface", "drain"]
+        }
+      ]
+    },
+    "lid_usage": {
+      "description": "System for assigning LID controls to subcatchments",
+      "configuration_options": [
+        "LID control selection",
+        "Number of replicate units",
+        "Area per unit (sq ft)",
+        "Percent of impervious area treated",
+        "Percent initially saturated",
+        "Surface width per unit (ft)",
+        "Flow routing destination"
+      ],
+      "flow_routing_options": ["Outlet", "Impervious", "Pervious"]
+    },
+    "simulation": {
+      "description": "SWMM5-based watershed runoff simulation engine",
+      "outputs": [
+        "Peak runoff (cfs)",
+        "Total runoff volume (acre-ft)",
+        "Runoff coefficient",
+        "Time to peak (minutes)",
+        "Time series data (15-minute intervals)"
+      ],
+      "time_series_data": [
+        "Time (hours)",
+        "Rainfall (in/hr)",
+        "Runoff (cfs)",
+        "Cumulative runoff (acre-ft)"
+      ]
+    },
+    "visualization": {
+      "description": "Interactive charts and plots for results analysis",
+      "chart_types": [
+        "Runoff hydrograph with peak annotations",
+        "Rainfall hyetograph",
+        "Cumulative runoff curves",
+        "Parameter summary tables"
+      ],
+      "library": "Plotly"
+    },
+    "export_options": [
+      {
+        "name": "SWMM .INP File",
+        "format": "text/plain",
+        "description": "Native SWMM5 input file format for use with EPA SWMM software"
+      },
+      {
+        "name": "LandXML",
+        "format": "application/xml",
+        "description": "Civil 3D compatible format for CAD integration"
+      },
+      {
+        "name": "Results CSV",
+        "format": "text/csv",
+        "description": "Time series simulation results for spreadsheet analysis"
+      },
+      {
+        "name": "Parameters CSV",
+        "format": "text/csv",
+        "description": "Complete parameter export for documentation"
+      },
+      {
+        "name": "PDF Report",
+        "format": "application/pdf",
+        "description": "Professional documentation report with all parameters and results"
+      }
+    ],
+    "validation": {
+      "description": "Real-time parameter validation system",
+      "validation_types": [
+        "Range validation (min/max bounds)",
+        "Logical consistency (field_capacity < porosity)",
+        "Cross-parameter validation",
+        "Required field checks"
+      ]
+    }
+  },
+  "ui_components": {
+    "theme": "Dark mode with water-themed gradient background",
+    "colors": {
+      "primary": "#00b4d8",
+      "background": "#0a1929",
+      "secondary_background": "#0d2847",
+      "text": "#e0f7fa"
+    },
+    "layout": "Wide layout with sidebar navigation",
+    "tabs": [
+      "Subcatchments",
+      "Surface Properties",
+      "Infiltration",
+      "Climate Data",
+      "LID Controls",
+      "LID Usage",
+      "Results",
+      "Summary"
+    ],
+    "sidebar_controls": [
+      "Reset All Parameters",
+      "Run Simulation",
+      "Export Files (expandable)",
+      "Model Information",
+      "Validation Status"
+    ]
+  },
+  "data_structures": {
+    "parameters": {
+      "subcatchment": {
+        "area": "float (acres)",
+        "width": "float (feet)",
+        "slope": "float (percent)",
+        "outlet_type": "string (Node/Subcatchment)",
+        "outlet_name": "string",
+        "curb_length": "float (feet)"
+      },
+      "surface": {
+        "pct_impervious": "float (0-100)",
+        "n_imperv": "float (Manning's n)",
+        "n_perv": "float (Manning's n)",
+        "dstore_imperv": "float (inches)",
+        "dstore_perv": "float (inches)",
+        "pct_zero_imperv": "float (0-100)",
+        "subarea_routing": "string (OUTLET/IMPERV/PERV)"
+      },
+      "infiltration": {
+        "method": "string",
+        "horton": "object",
+        "green_ampt": "object",
+        "curve_number": "object",
+        "modified_horton": "object",
+        "modified_green_ampt": "object"
+      },
+      "climate": {
+        "evap_method": "string",
+        "evap_constant": "float",
+        "monthly_evap": "array[12]",
+        "recovery_factor": "float",
+        "temp_method": "string",
+        "wind_speed": "float",
+        "snow_enabled": "boolean",
+        "snow_temp_threshold": "float",
+        "snow_melt_coeff": "float"
+      },
+      "lid_controls": {
+        "enabled": "boolean",
+        "bio_retention": "object",
+        "green_roof": "object",
+        "infiltration_trench": "object",
+        "permeable_pavement": "object",
+        "rain_barrel": "object",
+        "vegetative_swale": "object",
+        "rain_garden": "object",
+        "rooftop_disconnection": "object"
+      },
+      "lid_usage": {
+        "enabled": "boolean",
+        "assignments": "array of LID assignments"
+      }
+    },
+    "simulation_results": {
+      "peak_runoff": "float (cfs)",
+      "total_runoff": "float (acre-ft)",
+      "runoff_coefficient": "float",
+      "peak_time": "float (minutes)",
+      "time_series": {
+        "time": "array (hours)",
+        "rainfall": "array (in/hr)",
+        "runoff": "array (cfs)",
+        "cumulative_runoff": "array (acre-ft)"
+      },
+      "summary": "object with key metrics"
+    }
+  },
+  "file_structure": {
+    "main_files": [
+      {
+        "file": "app.py",
+        "purpose": "Main Streamlit application entry point and UI"
+      },
+      {
+        "file": "swmm_model.py",
+        "purpose": "SWMM5 model wrapper and simulation engine"
+      },
+      {
+        "file": "parameter_defaults.py",
+        "purpose": "Default parameter configurations and LID type definitions"
+      },
+      {
+        "file": "validation.py",
+        "purpose": "Parameter validation logic and error messages"
+      },
+      {
+        "file": "visualization.py",
+        "purpose": "Plotting and chart generation functions"
+      }
+    ],
+    "config_files": [
+      {
+        "file": ".streamlit/config.toml",
+        "purpose": "Streamlit server and theme configuration"
+      }
+    ],
+    "documentation": [
+      {
+        "file": "LID_Implementation_Summary.md",
+        "purpose": "Overview of LID control implementation"
+      },
+      {
+        "file": "LID_Code_Examples.md",
+        "purpose": "Detailed code examples for LID functionality"
+      },
+      {
+        "file": "replit.md",
+        "purpose": "Project documentation and architecture notes"
+      }
+    ]
+  },
+  "dependencies": {
+    "python_packages": [
+      "streamlit",
+      "pandas",
+      "numpy",
+      "plotly",
+      "fpdf2"
+    ],
+    "python_version": "3.11"
+  },
+  "api_endpoints": {
+    "note": "This is a Streamlit application without REST API endpoints",
+    "interaction_model": "Streamlit session state and widget callbacks"
+  },
+  "use_cases": [
+    "Urban watershed runoff analysis",
+    "Stormwater management planning",
+    "Green infrastructure (LID) impact assessment",
+    "Design storm simulation",
+    "Hydrograph generation",
+    "Civil engineering project support",
+    "Environmental impact studies",
+    "Municipal stormwater permit compliance"
+  ],
+  "technical_specifications": {
+    "simulation_duration": "6 hours",
+    "time_step": "15 minutes (0.25 hours)",
+    "flow_units": "CFS (cubic feet per second)",
+    "area_units": "acres",
+    "length_units": "feet",
+    "depth_units": "inches",
+    "infiltration_default": "Horton",
+    "flow_routing": "Steady state"
+  },
+  "integration_points": {
+    "input_formats": [
+      "Manual parameter entry via UI",
+      "Surface type presets",
+      "Soil type presets"
+    ],
+    "output_formats": [
+      "SWMM5 .INP file",
+      "LandXML (Civil 3D)",
+      "CSV (spreadsheet)",
+      "PDF report"
+    ],
+    "compatible_software": [
+      "EPA SWMM5",
+      "Autodesk Civil 3D",
+      "Microsoft Excel",
+      "Google Sheets"
+    ]
+  }
+}
